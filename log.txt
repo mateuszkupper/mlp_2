@@ -1,0 +1,118 @@
+Count Down : 3
+Waiting for server on 3008............
+Count Down : 2
+Waiting for server on 3008............
+Count Down : 1
+Waiting for server on 3008............
+Count Down : 0
+Waiting for server on 3008............
+Count Down : -1
+relaunch torcs
+Fuel consumption disabled!
+Car damages disabled!
+Laptime limit disabled!
+Visual Properties Report
+------------------------
+Compatibility mode, properties unknown.
+Cannot connect to server socket err = No such file or directory
+Cannot connect to server request channel
+jack server is not running or cannot be started
+JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for 4294967295, skipping unlock
+JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for 4294967295, skipping unlock
+Waiting for server on 3008............
+Count Down : 2
+Waiting for server on 3008............
+Count Down : 1
+Waiting for server on 3008............
+Count Down : 0
+Waiting for server on 3008............
+Count Down : -1
+relaunch torcs
+Fuel consumption disabled!
+Car damages disabled!
+Laptime limit disabled!
+Visual Properties Report
+------------------------
+Compatibility mode, properties unknown.
+Cannot connect to server socket err = No such file or directory
+Cannot connect to server request channel
+jack server is not running or cannot be started
+JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for 4294967295, skipping unlock
+JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for 4294967295, skipping unlock
+Waiting for server on 3008............
+Count Down : 2
+Waiting for server on 3008............
+Count Down : 1
+
+
+Waiting for server on 3008............
+Count Down : 3
+Waiting for server on 3008............
+Count Down : 2
+Waiting for server on 3008............
+Count Down : 1
+Waiting for server on 3008............
+Count Down : 0
+Waiting for server on 3008............
+Count Down : -1
+relaunch torcs
+Fuel consumption disabled!
+Car damages disabled!
+Laptime limit disabled!
+Visual Properties Report
+------------------------
+Compatibility mode, properties unknown.
+Cannot connect to server socket err = No such file or directory
+Cannot connect to server request channel
+jack server is not running or cannot be started
+JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for 4294967295, skipping unlock
+JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for 4294967295, skipping unlock
+Waiting for request on port 3008
+Waiting for server on 3008............
+Count Down : 2
+Client connected on 3008..............
+OpenAL backend info:
+  Vendor: OpenAL Community
+  Renderer: OpenAL Soft
+  Version: 1.1 ALSOFT 1.17.2
+  Available sources: 256
+  Available buffers: 1024 or more
+  Dynamic Sources: requested: 235, created: 235
+  #static sources: 21
+  #dyn sources   : 235
+.
+Waiting for server data on 3008..............
+
+
+
+
+
+Fuel consumption disabled!
+Car damages disabled!
+Laptime limit disabled!
+Visual Properties Report
+------------------------
+Compatibility mode, properties unknown.
+Cannot connect to server socket err = No such file or directory
+Cannot connect to server request channel
+jack server is not running or cannot be started
+JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for 4294967295, skipping unlock
+JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for 4294967295, skipping unlock
+
+
+
+
+Count Down : 3
+weffewgew
+Waiting for server on 3008............
+Count Down : 2
+weffewgew
+Waiting for server on 3008............
+Count Down : 1
+weffewgew
+Waiting for server on 3008............
+Count Down : 0
+weffewgew
+Waiting for server on 3008............
+Count Down : -1
+relaunch torcs
