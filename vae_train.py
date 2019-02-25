@@ -96,8 +96,8 @@ for epoch in range(NUM_EPOCH):
   
     if ((train_step+1) % 500 == 0):
       print("step", (train_step+1), train_loss, r_loss, kl_loss)
-    #if ((train_step+1) % 5000 == 0):
-      #vae.save_json("tf_vae/vae.json")
+    if ((train_step+1) % 5000 == 0):
+      vae.save_json("tf_vae/vae.json")
 
 # finished, final model:
 vae.save_json("tf_vae/vae.json")
