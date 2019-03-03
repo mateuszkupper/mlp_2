@@ -165,7 +165,7 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
   reward_list = []
   t_list = []
 
-  max_episode_length = 1000
+  max_episode_length =100
   recording_mode = False
   penalize_turning = False
 
@@ -182,7 +182,7 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
     model.reset()
 
     obs = model.client.S.d  #model.env.reset(model.client)
-
+    print(obs)
     total_reward = 0.0
 
     random_generated_int = np.random.randint(2**31-1)
@@ -205,8 +205,7 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
 
       recording_mu.append(mu)
       recording_logvar.append(logvar)
-      recording_action.append(action)
-      print(action) #[steering (-1 r, 1 l), accel, brake]
+      recording_action.append(action) #[steering (-1 r, 1 l), accel, brake]
       obs, reward, done, info = model.env.step(t, model.client, action, 1)
       extra_reward = 0.0 # penalize for turning too frequently
       if train_mode and penalize_turning:
@@ -271,7 +270,10 @@ def main():
   if (use_model):
     model = make_model()
     print('model size', model.param_count)
-    model.make_env(render_mode=render_mode)
+    client = snakeoil3.Client(p=3001, vision=False)  # Open new UDP in vtorcs
+    client.MAX_STEPS = np.inf
+    client.get_servers_input(0)
+    model.make_env(client)
     model.load_model(filename)
   else:
     model = make_model(load_model=False)

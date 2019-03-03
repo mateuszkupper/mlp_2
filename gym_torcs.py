@@ -144,23 +144,26 @@ class TorcsEnv:
         # Termination judgement #########################
         episode_terminate = False
         if ( (abs(track.any()) > 1 or abs(trackPos) > 1) and early_stop ):  # Episode is terminated if the car is out of track
-            reward = -50
+            reward = -3
+            #os.system('killall -9 python')
             #episode_terminate = True
             #client.R.d['meta'] = True
             #print('Terminating because Out of Track')
 
-        # if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
-        #     if ( (progress < self.termination_limit_progress) and early_stop ):
-        #         print("No progress")
-        #         #episode_terminate = True
-        #         client.R.d['meta'] = True
-        #         #print('Terminating because Small Progress')
-        '''
-        if np.cos(obs['angle']) < 0: # Episode is terminated if the agent runs backward
-            episode_terminate = True
-            client.R.d['meta'] = True
-            print('Terminating because Turned Back')
+        if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
+             if ( (progress < self.termination_limit_progress) and early_stop ):
+                 reward = -3
+                 #print("No progress")
+                 #episode_terminate = True
+                 #client.R.d['meta'] = True
+                 #print('Terminating because Small Progress')
         
+        if np.cos(obs['angle']) < 0: # Episode is terminated if the agent runs backward
+            reward = -3
+            #episode_terminate = True
+            #client.R.d['meta'] = True
+            #print('Terminating because Turned Back')
+        '''
         
         if client.R.d['meta'] is True: # Send a reset signal
             self.initial_run = False

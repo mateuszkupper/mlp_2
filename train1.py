@@ -12,6 +12,8 @@ robo_walker
 robo_humanoid
 '''
 
+import os
+import sys
 from mpi4py import MPI
 import numpy as np
 import json
@@ -25,10 +27,13 @@ import time
 import snakeoil3_gym as snakeoil3
 import socket
 from random import randint
+import time
 
 ### ES related code
 num_episode = 1
-eval_steps = 25 # evaluate every N_eval steps
+eval_steps = 1 # evaluate every N_eval steps
+finish_steps = 3
+
 retrain_mode = True
 cap_time_mode = True
 
@@ -101,7 +106,7 @@ def initialize_settings(sigma_init=0.1, sigma_decay=0.9999):
       sigma_decay=sigma_decay,
       sigma_alpha=0.20,
       sigma_limit=0.02,
-      learning_rate=0.01,
+      learning_rate=0.1,
       learning_rate_decay=1.0,
       learning_rate_limit=0.01,
       weight_decay=0.005,
@@ -296,8 +301,6 @@ def evaluate_batch(model_params, max_len=-1):
   return np.mean(reward_list)
 
 def master():
-
-  start_time = int(time.time())
   sprint("training", gamename)
   sprint("population", es.popsize)
   sprint("num_worker", num_worker)
@@ -308,18 +311,9 @@ def master():
 
   filename = filebase+'.json'
   filename_log = filebase+'.log.json'
-  filename_hist = filebase+'.hist.json'
+  filename_hist = filebase+'.hist.json'	
   filename_hist_best = filebase+'.hist_best.json'
   filename_best = filebase+'.best.json'
-
-  port = 3001
-
-  client = snakeoil3.Client(p=port, vision=False)  # Open new UDP in vtorcs
-  client.MAX_STEPS = np.inf
-  client.get_servers_input(0)
-  model.make_env(client)
-  port = port + 1
-  t = 0
 
   history = []
   history_best = [] # stores evaluation averages every 25 steps or so
@@ -328,90 +322,107 @@ def master():
   best_model_params_eval = None
 
   max_len = -1 # max time steps (-1 means ignore)
-
   while True:
-    t += 1
+    t = 0
+    start_time = int(time.time())
 
-    solutions = es.ask()
+    port = 3001
 
-    if antithetic:
-      seeds = seeder.next_batch(int(es.popsize/2))
-      seeds = seeds+seeds
-    else:
-      seeds = seeder.next_batch(es.popsize)
+    client = snakeoil3.Client(p=port, vision=False)  # Open new UDP in vtorcs
+    client.MAX_STEPS = np.inf
+    #client.get_servers_input(0)
+    model.make_env(client)
+    #model.load_model(filename_best)
+    with open(filename) as f:    
+      data = json.load(f)
+    print('loading file %s' % (filename))
+    model_params = np.array(data[0]) # assuming other stuff is in data
+    #es.set_mu(model_params)
+    port = port + 1
+    while True:
+      t += 1
+      solutions = es.ask()
 
-    packet_list = encode_solution_packets(seeds, solutions, max_len=max_len)
-
-    send_packets_to_slaves(packet_list)
-    reward_list_total = receive_packets_from_slaves()
-
-    reward_list = reward_list_total[:, 0] # get rewards
-
-    mean_time_step = int(np.mean(reward_list_total[:, 1])*100)/100. # get average time step
-    max_time_step = int(np.max(reward_list_total[:, 1])*100)/100. # get average time step
-    avg_reward = int(np.mean(reward_list)*100)/100. # get average time step
-    std_reward = int(np.std(reward_list)*100)/100. # get average time step
-
-    es.tell(reward_list)
-
-    es_solution = es.result()
-    model_params = es_solution[0] # best historical solution
-    reward = es_solution[1] # best reward
-    curr_reward = es_solution[2] # best of the current batch
-    model.set_model_params(np.array(model_params).round(4))
-
-    r_max = int(np.max(reward_list)*100)/100.
-    r_min = int(np.min(reward_list)*100)/100.
-
-    curr_time = int(time.time()) - start_time
-
-    h = (t, curr_time, avg_reward, r_min, r_max, std_reward, int(es.rms_stdev()*100000)/100000., mean_time_step+1., int(max_time_step)+1)
-
-    if cap_time_mode:
-      max_len = 2*int(mean_time_step+1.0)
-    else:
-      max_len = -1
-
-    history.append(h)
-
-    with open(filename, 'wt') as out:
-      res = json.dump([np.array(es.current_param()).round(4).tolist()], out, sort_keys=True, indent=2, separators=(',', ': '))
-
-    with open(filename_hist, 'wt') as out:
-      res = json.dump(history, out, sort_keys=False, indent=0, separators=(',', ':'))
-
-    sprint(gamename, h)
-
-    if (t == 1):
-      best_reward_eval = avg_reward
-    if (t % eval_steps == 0): # evaluate on actual task at hand
-
-      prev_best_reward_eval = best_reward_eval
-      model_params_quantized = np.array(es.current_param()).round(4)
-      reward_eval = evaluate_batch(model_params_quantized, max_len=-1)
-      model_params_quantized = model_params_quantized.tolist()
-      improvement = reward_eval - best_reward_eval
-      eval_log.append([t, reward_eval, model_params_quantized])
-      with open(filename_log, 'wt') as out:
-        res = json.dump(eval_log, out)
-      if (len(eval_log) == 1 or reward_eval > best_reward_eval):
-        best_reward_eval = reward_eval
-        best_model_params_eval = model_params_quantized
+      if antithetic:
+        seeds = seeder.next_batch(int(es.popsize/2))
+        seeds = seeds+seeds
       else:
-        if retrain_mode:
-          sprint("reset to previous best params, where best_reward_eval =", best_reward_eval)
-          es.set_mu(best_model_params_eval)
-      with open(filename_best, 'wt') as out:
-        res = json.dump([best_model_params_eval, best_reward_eval], out, sort_keys=True, indent=0, separators=(',', ': '))
-      # dump history of best
+        seeds = seeder.next_batch(es.popsize)
+
+      packet_list = encode_solution_packets(seeds, solutions, max_len=max_len)
+
+      send_packets_to_slaves(packet_list)
+      reward_list_total = receive_packets_from_slaves()
+      reward_list = reward_list_total[:, 0] # get rewards
+  
+      mean_time_step = int(np.mean(reward_list_total[:, 1])*100)/100. # get average time step
+      max_time_step = int(np.max(reward_list_total[:, 1])*100)/100. # get average time step
+      avg_reward = int(np.mean(reward_list)*100)/100. # get average time step
+      std_reward = int(np.std(reward_list)*100)/100. # get average time step
+      es.tell(reward_list)
+      es_solution = es.result()
+      model_params = es_solution[0] # best historical solution
+      reward = es_solution[1] # best reward
+      curr_reward = es_solution[2] # best of the current batch
+      model.set_model_params(np.array(model_params).round(4))
+
+      r_max = int(np.max(reward_list)*100)/100.
+      r_min = int(np.min(reward_list)*100)/100.
+
       curr_time = int(time.time()) - start_time
-      best_record = [t, curr_time, "improvement", improvement, "curr", reward_eval, "prev", prev_best_reward_eval, "best", best_reward_eval]
-      history_best.append(best_record)
-      with open(filename_hist_best, 'wt') as out:
-        res = json.dump(history_best, out, sort_keys=False, indent=0, separators=(',', ':'))
 
-      sprint("Eval", t, curr_time, "improvement", improvement, "curr", reward_eval, "prev", prev_best_reward_eval, "best", best_reward_eval)
+      h = (t, curr_time, avg_reward, r_min, r_max, std_reward, int(es.rms_stdev()*100000)/100000., mean_time_step+1., int(max_time_step)+1)
 
+      if cap_time_mode:
+        max_len = 2*int(mean_time_step+1.0)
+      else:
+        max_len = -1
+
+      history.append(h)
+
+      with open(filename, 'wt') as out:
+        res = json.dump([np.array(es.current_param()).round(4).tolist()], out, sort_keys=True, indent=2, separators=(',', ': '))
+
+      with open(filename_hist, 'wt') as out:
+        res = json.dump(history, out, sort_keys=False, indent=0, separators=(',', ':'))
+
+      sprint(gamename, h)
+      if (t == 1):
+        best_reward_eval = avg_reward
+      if (t % eval_steps == 0): # evaluate on actual task at hand
+
+        prev_best_reward_eval = best_reward_eval
+        model_params_quantized = np.array(es.current_param()).round(4)
+        reward_eval = evaluate_batch(model_params_quantized, max_len=-1)
+        model_params_quantized = model_params_quantized.tolist()
+        improvement = reward_eval - best_reward_eval
+        eval_log.append([t, reward_eval, model_params_quantized])
+        with open(filename_log, 'wt') as out:  
+          res = json.dump(eval_log, out)
+        if (len(eval_log) == 1 or reward_eval > best_reward_eval):
+          best_reward_eval = reward_eval
+          best_model_params_eval = model_params_quantized
+        else:
+          if retrain_mode:
+            sprint("reset to previous best params, where best_reward_eval =", best_reward_eval)
+            es.set_mu(best_model_params_eval)
+        with open(filename_best, 'wt') as out:
+          res = json.dump([best_model_params_eval, best_reward_eval], out, sort_keys=True, indent=0, separators=(',', ': '))
+        # dump history of best
+        curr_time = int(time.time()) - start_time
+        best_record = [t, curr_time, "improvement", improvement, "curr", reward_eval, "prev", prev_best_reward_eval, "best", best_reward_eval]  
+        history_best.append(best_record)
+        with open(filename_hist_best, 'wt') as out:
+          res = json.dump(history_best, out, sort_keys=False, indent=0, separators=(',', ':'))
+
+        sprint("Eval", t, curr_time, "improvement", improvement, "curr", reward_eval, "prev", prev_best_reward_eval, "best", best_reward_eval)
+      if (t % finish_steps == 0):
+        #os.system('killall -9 python')
+        os.system('killall -9 torcs-bin')
+        os.system('gnome-terminal -x sh -c "exec torcs -nofuel -nodamage -nolaptime; bash" &')  
+        time.sleep(5)
+        os.system('sh scripts/autostart.sh')
+        break
 
 def main(args):
   global optimizer, num_episode, eval_steps, num_worker, num_worker_trial, antithetic, seed_start, retrain_mode, cap_time_mode
@@ -425,9 +436,7 @@ def main(args):
   retrain_mode = (args.retrain == 1)
   cap_time_mode= (args.cap_time == 1)
   seed_start = args.seed_start
-
   initialize_settings(args.sigma_init, args.sigma_decay)
-
   sprint("process", rank, "out of total ", comm.Get_size(), "started")
   if (rank == 0):
     master()
@@ -462,7 +471,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description=('Train policy on OpenAI Gym environment '
                                                 'using pepg, ses, openes, ga, cma'))
   
-  parser.add_argument('-o', '--optimizer', type=str, help='ses, pepg, openes, ga, cma.', default='cma')
+  parser.add_argument('-o', '--optimizer', type=str, help='ses, pepg, openes, ga, cma.', default='pepg')
   parser.add_argument('--num_episode', type=int, default=16, help='num episodes per trial')
   parser.add_argument('--eval_steps', type=int, default=25, help='evaluate every eval_steps step')
   parser.add_argument('-n', '--num_worker', type=int, default=64)

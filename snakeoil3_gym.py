@@ -155,7 +155,7 @@ class Client(object):
         # == Initialize Connection To Server ==
         self.so.settimeout(1)
 
-        n_fail = 3
+        n_fail = 20
         while True:
             # This string establishes track sensor angles! You can customize them.
             #a= "-90 -75 -60 -45 -30 -20 -15 -10 -5 0 5 10 15 20 30 45 60 75 90"
@@ -186,7 +186,7 @@ class Client(object):
 
                     time.sleep(1.0)
                     os.system(u'sh scripts/autostart.sh')
-                    n_fail = 3
+                    n_fail = 20
                 n_fail -= 1
 
             identify = u'***identified***'
@@ -278,7 +278,7 @@ class Client(object):
         sockdata= str()
 
         # print '******Step : ' + str(step)
-        n_fail = 300000000 if step==0 else 3000000000
+        n_fail = 20 if step==0 else 20
         n_fail_org = n_fail
 
         while True:
@@ -304,7 +304,8 @@ class Client(object):
                     n_fail = n_fail_org
 
                 n_fail -= 1
-
+            #if n_fail <= 299999980:
+                #self.so= socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             if u'***identified***' in sockdata:
                 print(u"Client connected on %d.............." % self.port)
                 continue
@@ -312,13 +313,16 @@ class Client(object):
                 print ((u"Server has stopped the race on %d. "+
                         u"You were in %d place.") %
                         (self.port,self.S.d[u'racePos']))
-                self.shutdown()
+                os.system(u'sh start_reset.sh')
+                os.system(u'killall -9 python.sh')
                 return
             elif u'***restart***' in sockdata:
                 # What do I do here?
                 print(u"Server has restarted the race on %d." % self.port)
                 # I haven't actually caught the server doing this.
-                self.shutdown()
+                #self.shutdown()
+                os.system(u'sh start_reset.sh')
+                os.system(u'killall -9 python.sh')
                 return
             elif not sockdata: # Empty?
                 continue       # Try again.
@@ -625,7 +629,7 @@ def drive_example(c):
     if S[u'speedX']>170:
         R[u'gear']=6
     return
-
+'''
 # ================ MAIN ================
 if __name__ == u"__main__":
     C= Client(p=3101)
@@ -634,3 +638,4 @@ if __name__ == u"__main__":
         drive_example(C)
         C.respond_to_server()
     C.shutdown()
+'''
